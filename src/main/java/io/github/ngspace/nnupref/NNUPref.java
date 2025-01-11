@@ -17,8 +17,15 @@ public class NNUPref {
 	protected File file = null;
 	protected Map<String,Object> map = new HashMap<String,Object>();
 	protected List<ChangedSettingsListener> changeListers = new ArrayList<ChangedSettingsListener>();
-
+	
+	/**
+	 * Should safely cast objects
+	 */
 	public boolean safecasting;
+	
+	/**
+	 * Should automatically save when changed
+	 */
 	public boolean autosave;
 	
 	

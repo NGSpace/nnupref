@@ -5,15 +5,102 @@
 
   <groupId>io.github.ngspace</groupId>
   <artifactId>nnupref</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2</version>
 
   <name>nnupref</name>
   <url>https://ngspace.github.io</url>
+  <description>A library for managing user prefrences.</description>
+  
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://raw.githubusercontent.com/NGSpace/nnupref/refs/heads/main/LICENSE</url>
+    </license>
+  </licenses>
+  
+  <developers>
+  <developer>
+    <name>Tomer Akiva</name>
+    <organizationUrl>https://ngspace.github.io</organizationUrl>
+  </developer>
+</developers>
+<scm>
+  <connection>scm:git:git://github.com/ngspace/nnupref</connection>
+  <developerConnection>scm:git:ssh://github.com:ngspace/nnupref</developerConnection>
+  <url>http://github.com/ngspace/nnupref/tree/main</url>
+</scm>
+  
+  <profiles>
+  <profile>
+    <id>deployment</id>
+    <build>
+      <plugins>
+        
+	    <!--  JavaDoc  -->
+	    
+	    <plugin>
+	      <groupId>org.apache.maven.plugins</groupId>
+	      <artifactId>maven-javadoc-plugin</artifactId>
+	      <version>3.10.1</version> <!-- Check for latest version at Maven Central -->
+	      <executions>
+	        <execution>
+	          <id>attach-javadocs</id>
+	          <goals>
+	            <goal>jar</goal>
+	          </goals>
+	        </execution>
+	      </executions>
+	    </plugin>
+	    
+	    
+	    <!--  Sources  -->
+	    <plugin>
+	      <groupId>org.apache.maven.plugins</groupId>
+	      <artifactId>maven-source-plugin</artifactId>
+	      <version>3.3.1</version>  <!-- Check for latest version at Maven Central -->
+	      <executions>
+	        <execution>
+	          <id>attach-sources</id>
+	          <goals>
+	            <goal>jar-no-fork</goal>
+	          </goals>
+	        </execution>
+	      </executions>
+	    </plugin>
+	    
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.2.7</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.6.0</version><!-- Check for latest version at Maven Central -->
+          <extensions>true</extensions>
+          <configuration>
+            <publishingServerId>central</publishingServerId>
+            <autoPublish>true</autoPublish>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+  </profile>
+</profiles>
   
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>22</maven.compiler.release>
+    <maven.compiler.release>21</maven.compiler.release>
   </properties>
 
   <dependencyManagement>
@@ -84,6 +171,7 @@
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.6.1</version>
         </plugin>
+	    
       </plugins>
     </pluginManagement>
   </build>
