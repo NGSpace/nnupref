@@ -1,4 +1,4 @@
-package io.github.ngspace.properties_manager;
+package io.github.ngspace.nnupref;
 
 import java.io.File;
 import java.io.FileInputStream;

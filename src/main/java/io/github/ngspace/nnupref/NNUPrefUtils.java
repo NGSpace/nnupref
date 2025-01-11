@@ -1,4 +1,4 @@
-package io.github.ngspace.properties_manager;
+package io.github.ngspace.nnupref;
 
 public class NNUPrefUtils {private NNUPrefUtils() {}
 	

@@ -1,4 +1,4 @@
-package io.github.ngspace.properties_manager;
+package io.github.ngspace.nnupref;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
