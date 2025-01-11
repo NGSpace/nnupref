@@ -29,6 +29,7 @@ public class NNUPref {
 	public boolean autosave;
 	
 	
+	
 	public NNUPref(File file, Map<String, Object> defaults) throws IOException {
 		this.file = file;
 		if (!file.exists()&&createfile(file.getAbsolutePath())) {
@@ -138,6 +139,10 @@ public class NNUPref {
 	
 	
 	
+	/**
+	 * The file which is proccessed and written to
+	 * @return
+	 */
 	public File getFile() {return file;}
 	public void setFile(File file) {this.file = file;}
 	
