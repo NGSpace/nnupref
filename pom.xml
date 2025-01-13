@@ -11,9 +11,15 @@
   <url>https://ngspace.github.io</url>
   <description>A library for managing user prefrences.</description>
   
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+  </properties>
+  
   <licenses>
     <license>
-      <name>MIT License</name>
+      <name>GNU General Public License v3.0</name>
       <url>https://raw.githubusercontent.com/NGSpace/nnupref/refs/heads/main/LICENSE</url>
     </license>
   </licenses>
@@ -96,12 +102,6 @@
     </build>
   </profile>
 </profiles>
-  
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>21</maven.compiler.release>
-  </properties>
 
   <dependencyManagement>
     <dependencies>

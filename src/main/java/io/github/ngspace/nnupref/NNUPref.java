@@ -1,117 +1,158 @@
 package io.github.ngspace.nnupref;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Scanner;
 
 public class NNUPref {
 	
-	protected File file = null;
-	protected Map<String,Object> map = new HashMap<String,Object>();
-	protected List<ChangedSettingsListener> changeListers = new ArrayList<ChangedSettingsListener>();
+	private File file = null;
+	private Map<String,Object> map = new HashMap<String,Object>();
+	private List<ChangedSettingsListener> changeListers = new ArrayList<ChangedSettingsListener>();
 	
-	/**
-	 * Should safely cast objects
-	 */
-	public boolean safecasting;
-	
-	/**
-	 * Should automatically save when changed
-	 */
-	public boolean autosave;
+	private boolean autosave;
+	private IValueProcessor valueProcessor;
+	private boolean safeSave;
 	
 	
 	
-	public NNUPref(File file, Map<String, Object> defaults) throws IOException {
+	public NNUPref(File file, InputStream stream, Map<String, Object> defaults, boolean autosave, boolean autocreatefile,
+			IValueProcessor valueProcessor) throws IOException {
 		this.file = file;
-		if (!file.exists()&&createfile(file.getAbsolutePath())) {
-			map = new HashMap<String,Object>(defaults);
-			save();
+		this.autosave = autosave;
+		this.valueProcessor = valueProcessor;
+		
+		// Create the map
+		map = new HashMap<String,Object>();
+		
+		// Add all defaults
+		if (defaults!=null) map.putAll(defaults);
+		
+		// Is file set?
+		if (file!=null) {
+
+			// If file doesn't exit, create it.
+			if (autocreatefile&&!file.exists()&&file.createNewFile()) save();
+			
+			// Process file
+			readAndProcess(new FileInputStream(file));
 		}
-		process(new FileInputStream(file));
-	}
-	public NNUPref(InputStream ins) throws IOException {
-		process(ins);
-	}
-	protected NNUPref() {}
-	protected boolean createfile(String FilePath) throws IOException {
-		try {
-			new File(FilePath).getParentFile().mkdirs();
-			return new File(FilePath).createNewFile();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
+		
+		// Process InputStream if exists
+		if (stream!=null) readAndProcess(stream);
 	}
 	
 	
 	
-	public void process(File file) throws IOException {
-		process(new FileInputStream(file));
-	}
 	
-	protected void process(InputStream ins) throws IOException {
-		Scanner myReader = new Scanner(ins);
-		ArrayList<String> lines = new ArrayList<String>();
-		while (myReader.hasNextLine()) {
-			String nextln = myReader.nextLine();
-			StringBuilder strb = new StringBuilder(nextln);
-			boolean shouldloop = true;
-			while (shouldloop&&myReader.hasNextLine()) {
-				for (int i = nextln.length()-1;i>0;i--) if (nextln.charAt(i)=='\\') shouldloop = !shouldloop;				
-				strb.append(myReader.nextLine());
+	protected void readAndProcess(InputStream ins) throws IOException {
+		ArrayList<byte[]> lines = new ArrayList<byte[]>();
+		int byt = -1;
+		while ((byt=ins.read())!=-1) {
+			List<Byte> bytes = new ArrayList<Byte>();
+			bytes.add((byte)byt);
+			while ((byt=ins.read())!=-1&&((char)byt)!='\n') {
+				bytes.add((byte)byt);
 			}
-			lines.add(strb.toString());
+	    	byte[] b = new byte[bytes.size()];
+	    	for (int i = 0;i<b.length;i++) b[i]=bytes.get(i);
+			lines.add(b);
 		}
-	    myReader.close();
-	    finalizelist(lines.toArray(new String[lines.size()]));
+		ins.close();
+	    process(lines);
 	}
-	protected void finalizelist(String[] ls) throws IOException {
+	
+	
+	
+	protected void process(ArrayList<byte[]> ls) {
 		if (map==null) map = new HashMap<String,Object>();
-		for (int i = 0;i<ls.length;i++) {
-			try {
-				if (ls[i].trim().isEmpty()) continue;
-				if (ls[i].charAt(0)=='#') continue;
-				String[] kAV = ls[i].split("=", 2);
-				int ln = kAV[1].length();
-				while (kAV[1].charAt(ln-1)=='\\') {
+		for (int i = 0;i<ls.size();i++) {
+			String str = new String(ls.get(i));
+			
+			if (str.trim().isEmpty()) continue;
+			if (str.charAt(0)=='#') continue;
+			
+			int line = i;
+			
+			String[] keyandvalue = str.split("=", 2);
+			
+			if (keyandvalue[1].length()>2)
+				while (keyandvalue[1].charAt(keyandvalue[1].length()-1)=='\\') {
 					i++;
-					kAV[1]=kAV[1].substring(0, ln - 1) + ls[i];
-					ln = kAV[1].length();
+					keyandvalue[1]=keyandvalue[1].substring(0, keyandvalue[1].length() - 1) + str;
 				}
-				map.put(kAV[0], kAV[1]);
-			} catch (Exception e) {
-				e.printStackTrace();
-				throw new ReadException(i);
-				
+			int start = 0;
+			for (int j = 0;j<ls.get(i).length;j++) {
+				if ((ls.get(i)[j])=='=') {start = j+1;break;}
 			}
+			
+			byte[] bytes = Arrays.copyOfRange(ls.get(i), start, ls.get(i).length);
+			
+			map.put(keyandvalue[0], valueProcessor.readValue(bytes, line));
 			
 		}
 	}
+	
+	
+	
 	public void save() throws IOException {
 		if (file==null) throw new IOException("File not set for NNUPref object.");
-		FileWriter fw = new FileWriter(file);
+		if (safeSave) saveSafe(); else saveUnsafe();
+	}
+	private void saveUnsafe() throws IOException {
+		FileOutputStream fw = new FileOutputStream(file);
 		
-		for (Entry<String, Object> entry : map.entrySet())
-			fw.write(entry.getKey() + "=" + entry.getValue() + "\n");
+		for (Entry<String, Object> entry : map.entrySet()) {
+			fw.write((entry.getKey() + "=").getBytes());
+			
+			if (entry.getValue()==null) continue;
+			
+			byte[] bytes = valueProcessor.writeValue(entry.getValue());
+			fw.write(bytes);
+			fw.write("\n".getBytes());
+		}
 		
 		fw.flush();
 		fw.close();
 	}
-	
-	
-	public boolean has(String key) {return get(key)!=null;}
-	public Object get(String key) {
-		return map.get(key);
+	private void saveSafe() {
+		try {
+			ByteArrayOutputStream safeoutput = new ByteArrayOutputStream();
+			
+			for (Entry<String, Object> entry : map.entrySet()) {
+				safeoutput.write((entry.getKey() + "=").getBytes());
+				
+				if (entry.getValue()==null) continue;
+				
+				byte[] bytes = valueProcessor.writeValue(entry.getValue());
+				safeoutput.write(bytes);
+				safeoutput.write("\n".getBytes());
+			}
+			safeoutput.flush();
+			safeoutput.close();
+			FileOutputStream fileoutput = new FileOutputStream(file);
+			fileoutput.write(safeoutput.toByteArray());
+			fileoutput.flush();
+			fileoutput.close();
+		} catch (IOException e) {
+			System.err.println("Encountered IO error, dropping change.");
+			
+		}
 	}
+	
+	
+	
+	public Object get(String key) {return map.get(key);}
+	public boolean has(String key) {return get(key)!=null;}
 	
 	
 	
@@ -139,10 +180,6 @@ public class NNUPref {
 	
 	
 	
-	/**
-	 * The file which is proccessed and written to
-	 * @return
-	 */
 	public File getFile() {return file;}
 	public void setFile(File file) {this.file = file;}
 	
