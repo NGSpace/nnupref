@@ -3,7 +3,6 @@ package io.github.ngspace.nnupref;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 /**
  * A helper class to help create NNUPref objects
@@ -12,12 +11,12 @@ public class NNUPrefBuilder {
 	
 	private InputStream inputStream = null;
 	private File file = null;
-	private Map<String, Object> defaults = null;
 	private IValueProcessor valueProcessor = new DefaultValueProcessor();
 	
 	private boolean autosave = false;
 	private boolean autocreatemissingfile = false;
 	private boolean safesave = false;
+	private boolean typechecking = true;
 
 	public NNUPrefBuilder(File file) {
 		this.file = file;
@@ -35,10 +34,6 @@ public class NNUPrefBuilder {
 		return file;
 	}
 
-	public Map<String, Object> getDefaults() {
-		return defaults;
-	}
-
 	public boolean isAutosave() {
 		return autosave;
 	}
@@ -54,6 +49,14 @@ public class NNUPrefBuilder {
 	public boolean isSafesave() {
 		return safesave;
 	}
+	
+	public boolean doesTypeChecking() {
+		return typechecking;
+	}
+	
+	public void setTypeChecking(boolean typechecking) {
+		this.typechecking = typechecking;
+	}
 
 	public void setInputStream(InputStream inputStream) {
 		this.inputStream = inputStream;
@@ -61,10 +64,6 @@ public class NNUPrefBuilder {
 
 	public void setFile(File file) {
 		this.file = file;
-	}
-
-	public void setDefaults(Map<String, Object> defaults) {
-		this.defaults = defaults;
 	}
 
 	public void setAutosave(boolean autosave) {
@@ -84,6 +83,6 @@ public class NNUPrefBuilder {
 	}
 
 	public NNUPref build() throws IOException {
-		return new NNUPref(file, inputStream, defaults, autosave, autocreatemissingfile, valueProcessor, safesave);
+		return new NNUPref(file, inputStream, autosave, autocreatemissingfile, valueProcessor, safesave, typechecking);
 	}
 }

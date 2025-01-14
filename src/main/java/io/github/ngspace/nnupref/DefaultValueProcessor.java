@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * The default implementation of {@link IValueProcessor}
+ */
 public class DefaultValueProcessor implements IValueProcessor {
 
 	@Override
@@ -22,13 +25,17 @@ public class DefaultValueProcessor implements IValueProcessor {
 		
 		
 		
-		if (value.isEmpty()) throw new IllegalArgumentException("Invalid arguement, Len=" + valuee.length + " value=" +
-				Arrays.toString(valuee));
+		if (value.isEmpty()) throw new ValueProcessingException("Invalid arguement, Len=" + valuee.length + " value=" +
+				Arrays.toString(valuee), line);
+
+		// Chars and null
+		if (value.matches("'.'")) return value.charAt(1);
+		if (value.equals("null")) return null;
 		
 		
 		
 		// Numbers
-		if (value.matches("((0x|#)[\\daAbBcCdDeEfF]+|[-+]*\\d*(\\.?(\\d+)?))")) return parseNumber(value);
+		if (value.matches("((0x|#)[\\daAbBcCdDeEfF]+|[-+]*\\d*(\\.?(\\d+)?[ILDBFS]?))")) return parseNumber(value);
 		
 		
 		
@@ -95,7 +102,7 @@ public class DefaultValueProcessor implements IValueProcessor {
 				int valueelength = start + keyandval[1].getBytes().length;
 				
 				byte[] bytes = Arrays.copyOfRange(args.get(i),start,valueelength);
-				
+
 				map.put(keyandval[0].trim(), readValue(bytes, line));
 			}
 			
@@ -109,23 +116,43 @@ public class DefaultValueProcessor implements IValueProcessor {
 				return inputStream.readObject();
 			} catch (Exception e) {
 				e.printStackTrace();
+				throw new ValueProcessingException(e, value, line);
 			}
 		}
 		
 		throw new ValueProcessingException(value, line);
 	}
 
-	private double parseNumber(String value) {
+	private Number parseNumber(String value) {
 		if (value.startsWith("0x")||value.startsWith("#")) return Long.decode(value);
-		else return Double.parseDouble(value);
+		else {
+			char lastchar = value.charAt(value.length()-1);
+			String val = value.substring(0,value.length()-(Character.isDigit(lastchar)?0:1));
+			return switch (lastchar) {//ILDBFS
+				case 'I': yield Integer.parseInt(val);
+				case 'L': yield Long.parseLong(val);
+				case 'B': yield Byte.parseByte(val);
+				case 'F': yield Float.parseFloat(val);
+				case 'S': yield Short.parseShort(val);
+				default:// D
+					yield Double.parseDouble(val);
+			};
+		}
 	}
 
 	@Override
 	public byte[] writeValue(Object value) throws IOException {
 		return switch (value) {
+			case Integer n: yield (n+"I").getBytes();
+			case Long    n: yield (n+"L").getBytes();
+			case Double  n: yield (n+"D").getBytes();
+			case Byte    n: yield (n+"B").getBytes();
+			case Float   n: yield (n+"F").getBytes();
+			case Short   n: yield (n+"S").getBytes();
+			
 			case Number num: yield String.valueOf(num.doubleValue()).getBytes();
-			case String str: yield ('"'+str.replace("\"", "\\\"")+'"').getBytes();
-			case Character c: yield ("\""+c.charValue()+"\"").getBytes();
+			case String str: yield ('"'+str.replace("\"", "\\\"").replace("\n", "\\n")+'"').getBytes();
+			case Character c: yield ("'"+c.charValue()+"'").getBytes();
 			case Boolean b: yield String.valueOf(b).getBytes();
 
 			case long[] o: yield Arrays.toString(o).getBytes();
@@ -138,7 +165,7 @@ public class DefaultValueProcessor implements IValueProcessor {
 			case char[] o: yield Arrays.toString(o).getBytes();
 
 			case Object[] o: {
-				byte[] bytes = new byte[1];
+				byte[] bytes = new byte[0];
 				bytes = addToArray(bytes, "[".getBytes());
 				for (int i = 0;i<o.length;i++) {
 					bytes = addToArray(bytes, writeValue(o[i]));
@@ -182,6 +209,10 @@ public class DefaultValueProcessor implements IValueProcessor {
 			newarr[arr.length+i] = t[i];
 		}
 		return newarr;
+	}
+
+	@Override public boolean isCompatibleType(Object value) {
+		return value==null || value instanceof Serializable || value.getClass().isArray();
 	}
 	
 }
