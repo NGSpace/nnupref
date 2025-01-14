@@ -13,15 +13,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * The default implementation of {@link IValueProcessor}.
+ * Supports Serializable objects, maps, primitives and arrays
+ */
 public class DefaultValueProcessor implements IValueProcessor {
 	
 	/**
-	 * The default implementation of {@link IValueProcessor}
+	 * The default implementation of {@link IValueProcessor}.
+	 * Supports Serializable objects, maps, primitives and arrays
 	 */
 	public DefaultValueProcessor() {/**/}
 
-	@Override
-	public Object readValue(byte[] valuee, int line) {
+	@Override public Object readValue(byte[] valuee, int line) {
 		
 		String value = new String(valuee).trim();
 		
@@ -142,8 +146,7 @@ public class DefaultValueProcessor implements IValueProcessor {
 		}
 	}
 
-	@Override
-	public byte[] writeValue(Object value) throws IOException {
+	@Override public byte[] writeValue(Object value) throws IOException {
 		return switch (value) {
 			case Integer n: yield (n+"I").getBytes();
 			case Long    n: yield (n+"L").getBytes();

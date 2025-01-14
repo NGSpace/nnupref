@@ -16,9 +16,9 @@ class FileSystemIOTests {
 		File testsdir = new File("tests");
 		if (!testsdir.exists()) testsdir.mkdir();
 		NNUPrefBuilder prefbuilder = new NNUPrefBuilder(new File("tests/"+name));
-		prefbuilder.setAutocreatemissingfile(auto);
-		prefbuilder.setAutosave(auto);
-		prefbuilder.setSafesave(safe);
+		prefbuilder.setAutoCreateMissingFile(auto);
+		prefbuilder.setAutoSave(auto);
+		prefbuilder.setSafeSave(safe);
 		return prefbuilder.build();
 	}
 	private void delete(String string) {
