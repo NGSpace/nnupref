@@ -138,7 +138,14 @@ public class DefaultValueProcessor implements IValueProcessor {
 			case char[] o: yield Arrays.toString(o).getBytes();
 
 			case Object[] o: {
-				yield Arrays.toString(o).getBytes();
+				byte[] bytes = new byte[1];
+				bytes = addToArray(bytes, "[".getBytes());
+				for (int i = 0;i<o.length;i++) {
+					bytes = addToArray(bytes, writeValue(o[i]));
+					if (i+1!=o.length)bytes = addToArray(bytes, ", ".getBytes());
+				}
+				bytes = addToArray(bytes, "]".getBytes());
+				yield bytes;
 			}
 			
 			case Map<?, ?> m: {

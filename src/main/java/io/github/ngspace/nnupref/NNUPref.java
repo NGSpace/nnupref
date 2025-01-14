@@ -17,7 +17,8 @@ public class NNUPref {
 	
 	private File file = null;
 	private Map<String,Object> map = new HashMap<String,Object>();
-	private List<ChangedSettingsListener> changeListers = new ArrayList<ChangedSettingsListener>();
+	private List<ChangedPrefListener> changeListers = new ArrayList<ChangedPrefListener>();
+	private List<SavePrefListener> saveListers = new ArrayList<SavePrefListener>();
 	
 	private boolean autosave;
 	private IValueProcessor valueProcessor;
@@ -26,9 +27,10 @@ public class NNUPref {
 	
 	
 	public NNUPref(File file, InputStream stream, Map<String, Object> defaults, boolean autosave, boolean autocreatefile,
-			IValueProcessor valueProcessor) throws IOException {
+			IValueProcessor valueProcessor, boolean safeSave) throws IOException {
 		this.file = file;
 		this.autosave = autosave;
+		this.safeSave = safeSave;
 		this.valueProcessor = valueProcessor;
 		
 		// Create the map
@@ -104,8 +106,11 @@ public class NNUPref {
 	
 	
 	
-	public void save() throws IOException {
-		if (file==null) throw new IOException("File not set for NNUPref object.");
+	public void save() throws IOException, NullPointerException {
+		if (file==null) throw new NullPointerException("File is not set for NNUPref.");
+		for (var v : saveListers)
+			if (!v.shouldContinue(file))
+				throw new SaveCanceledException("NNUPref save canceled by event listener");
 		if (safeSave) saveSafe(); else saveUnsafe();
 	}
 	private void saveUnsafe() throws IOException {
@@ -124,29 +129,24 @@ public class NNUPref {
 		fw.flush();
 		fw.close();
 	}
-	private void saveSafe() {
-		try {
-			ByteArrayOutputStream safeoutput = new ByteArrayOutputStream();
+	private void saveSafe() throws IOException {
+		ByteArrayOutputStream safeoutput = new ByteArrayOutputStream();
+		
+		for (Entry<String, Object> entry : map.entrySet()) {
+			safeoutput.write((entry.getKey() + "=").getBytes());
 			
-			for (Entry<String, Object> entry : map.entrySet()) {
-				safeoutput.write((entry.getKey() + "=").getBytes());
-				
-				if (entry.getValue()==null) continue;
-				
-				byte[] bytes = valueProcessor.writeValue(entry.getValue());
-				safeoutput.write(bytes);
-				safeoutput.write("\n".getBytes());
-			}
-			safeoutput.flush();
-			safeoutput.close();
-			FileOutputStream fileoutput = new FileOutputStream(file);
-			fileoutput.write(safeoutput.toByteArray());
-			fileoutput.flush();
-			fileoutput.close();
-		} catch (IOException e) {
-			System.err.println("Encountered IO error, dropping change.");
+			if (entry.getValue()==null) continue;
 			
+			byte[] bytes = valueProcessor.writeValue(entry.getValue());
+			safeoutput.write(bytes);
+			safeoutput.write("\n".getBytes());
 		}
+		safeoutput.flush();
+		safeoutput.close();
+		FileOutputStream fileoutput = new FileOutputStream(file);
+		fileoutput.write(safeoutput.toByteArray());
+		fileoutput.flush();
+		fileoutput.close();
 	}
 	
 	
@@ -156,9 +156,20 @@ public class NNUPref {
 	
 	
 	
-	public boolean getBoolean(String key) {return (boolean)get(key);}
-	public int getInt(String string) {return ((Number)get(string)).intValue();}
-	public double getDouble(String string) {return ((Number)get(string)).doubleValue();}
+	
+	public boolean getBoolean(String key) {return (Boolean)get(key);}
+	public char getChar(String key) {return (Character)get(key);}
+	public String getString(String key) {return (String)get(key);}
+	
+	
+	public int getInt(String key) {return ((Number)get(key)).intValue();}
+	public double getDouble(String key) {return ((Number)get(key)).doubleValue();}
+	
+
+	public Object[] getArray(String key) {return (Object[])get(key);}
+	@SuppressWarnings("unchecked")
+	public Map<Object, Object> getMap(String key) {return (Map<Object, Object>)get(key);}
+	public <T> T getOfType(String key, Class<T> clazz) {return clazz.cast(get(key));}
 	
 	
 	
@@ -166,28 +177,15 @@ public class NNUPref {
 		Object oldval = null;
 		try {oldval = get(key);} catch (Exception e) {e.printStackTrace();}
 		map.put(key, value);
-		autoSave();
-		dispatchChange(key, value, oldval);
+		if (autosave) save();
+		for (var lis : changeListers) lis.changedValue(key, value, oldval);
 	}
 	
 	
-	
-	public void addChangeListener(ChangedSettingsListener listener) {changeListers.add(listener);}
-	
-	public void dispatchChange(String key, Object value, Object oldval) {
-		for (ChangedSettingsListener lis : changeListers) lis.changedValue(key, value, oldval, this);
-	}
+
+	public void addChangeValueListener(ChangedPrefListener listener) {changeListers.add(listener);}
+	public void addSaveToFileListener(SavePrefListener listener) {saveListers.add(listener);}
 	
 	
-	
-	public File getFile() {return file;}
-	public void setFile(File file) {this.file = file;}
-	
-	public Map<String, Object> getMap() {return map;}
-	public void setMap(Map<String, Object> map) {this.map = map;}
-	
-	private void autoSave() throws IOException {if (autosave) save();}
-	
-	
-	
+	public Map<String, Object> toMap() {return map;}
 }
