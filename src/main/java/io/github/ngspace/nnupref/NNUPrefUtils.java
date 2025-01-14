@@ -1,39 +1,43 @@
 package io.github.ngspace.nnupref;
 
-public class NNUPrefUtils {private NNUPrefUtils() {}
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+class NNUPrefUtils {private NNUPrefUtils() {}
 	
-	public static String[] processParemeters(String strtoprocess) {
-		if (strtoprocess.isBlank()) return new String[0];
+	static List<byte[]> processParemeters(byte[] strtoprocess) {
+		if (strtoprocess.length==0) return new ArrayList<byte[]>();
 		
 		int parentheses = 0;
 		int squareparentheses = 0;
 
-		StringBuilder parameterBuilder = new StringBuilder();
-		String[] tokenizedParemeters = new String[0];
-		for (int i = 0;i<strtoprocess.length();i++) {
-			char c = strtoprocess.charAt(i);
+		byte[] parameterBuilder = new byte[0];
+		List<byte[]> tokenizedParemeters = new ArrayList<byte[]>();
+		for (int i = 0;i<strtoprocess.length;i++) {
+			char c = (char)strtoprocess[i];
 			if (c==','&&parentheses==0&&squareparentheses==0) {
-				tokenizedParemeters = addToArray(tokenizedParemeters, parameterBuilder.toString());
-				parameterBuilder.setLength(0);
+				tokenizedParemeters.add(parameterBuilder);
+				parameterBuilder = new byte[0];
 				continue;
 			}
 			if (c=='"') {
-				parameterBuilder.append('"');
+				parameterBuilder=append(parameterBuilder,'"');
 				i++;
 				boolean safe = false;
-				for (;i<strtoprocess.length();i++) {
-					c = strtoprocess.charAt(i);
+				for (;i<strtoprocess.length;i++) {
+					c = (char) strtoprocess[i];
 					if (!safe) {
 						if (c=='\\') {safe = true;continue;}
 					} else {
-						if (c=='n') parameterBuilder.append('\n');
-						else if (c=='"') parameterBuilder.append("\\\"");
-						else if (c=='\\') parameterBuilder.append('\\');
-						else parameterBuilder.append(c);
+						if (c=='n') parameterBuilder=append(parameterBuilder,'\n');
+						else if (c=='"') parameterBuilder=addToArray(parameterBuilder,"\\\"".getBytes());
+						else if (c=='\\') parameterBuilder=append(parameterBuilder,'\\');
+						else parameterBuilder=append(parameterBuilder,c);
 						safe = false;
 						continue;
 					}
-					parameterBuilder.append(c);
+					parameterBuilder=append(parameterBuilder,c);
 					if (c=='"') {
 						break;
 					}
@@ -45,14 +49,24 @@ public class NNUPrefUtils {private NNUPrefUtils() {}
 			if (c=='[') squareparentheses++;
 			if (c==']') squareparentheses--;
 			
-			parameterBuilder.append(c);
+			parameterBuilder=append(parameterBuilder,c);
 		}
-		tokenizedParemeters = addToArray(tokenizedParemeters, parameterBuilder.toString());
+		tokenizedParemeters.add(parameterBuilder);
 		return tokenizedParemeters;
 	}
-	private static <T> T[] addToArray(T[] arr, T t) {
-		T[] newarr = java.util.Arrays.copyOf(arr, arr.length+1);
+	private static byte[] addToArray(byte[] arr, byte t) {
+		byte[] newarr = Arrays.copyOf(arr, arr.length+1);
 		newarr[arr.length] = t;
 		return newarr;
+	}
+	private static byte[] addToArray(byte[] arr, byte[] t) {
+		byte[] newarr = Arrays.copyOf(arr, arr.length+t.length);
+		for (int i = 0;i<t.length;i++) {
+			newarr[arr.length+i] = t[i];
+		}
+		return newarr;
+	}
+	private static byte[] append(byte[] arr, char c) {
+		return addToArray(arr, (byte)c);
 	}
 }
