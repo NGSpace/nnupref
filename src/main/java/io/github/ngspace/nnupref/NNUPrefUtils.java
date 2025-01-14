@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class NNUPrefUtils {private NNUPrefUtils() {}
+class NNUPrefUtils {private NNUPrefUtils() {}
 	
-	public static List<byte[]> processParemeters(byte[] strtoprocess) {
+	static List<byte[]> processParemeters(byte[] strtoprocess) {
 		if (strtoprocess.length==0) return new ArrayList<byte[]>();
 		
 		int parentheses = 0;

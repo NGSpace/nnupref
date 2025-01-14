@@ -13,10 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-/**
- * The default implementation of {@link IValueProcessor}
- */
 public class DefaultValueProcessor implements IValueProcessor {
+	
+	/**
+	 * The default implementation of {@link IValueProcessor}
+	 */
+	public DefaultValueProcessor() {/**/}
 
 	@Override
 	public Object readValue(byte[] valuee, int line) {
