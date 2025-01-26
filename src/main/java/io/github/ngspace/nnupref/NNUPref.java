@@ -124,6 +124,7 @@ public class NNUPref implements Map<String, Object>, Serializable {
 		if (map==null) map = new HashMap<String,Object>();
 		for (int i = 0;i<ls.size();i++) {
 			String str = new String(ls.get(i));
+			if (str.isBlank()) continue;
 			
 			if (str.trim().isEmpty()) continue;
 			if (str.charAt(0)=='#') continue;
@@ -473,4 +474,67 @@ public class NNUPref implements Map<String, Object>, Serializable {
 	@Override public Set<String> keySet() {return map.keySet();}
 	@Override public Collection<Object> values() {return map.values();}
 	@Override public Set<Entry<String, Object>> entrySet() {return map.entrySet();}
+
+
+	/**
+	 * The File written to when {@link #save()} is called
+	 * @return ^
+	 */
+	public File getFile() {
+		return file;
+	}
+	
+	
+	
+	public boolean isAutoSave() {
+		return autoSave;
+	}
+
+
+
+	public IValueProcessor getValueProcessor() {
+		return valueProcessor;
+	}
+
+
+
+	public boolean isSafeSave() {
+		return safeSave;
+	}
+
+
+
+	public boolean isTypeChecking() {
+		return typeChecking;
+	}
+
+
+
+	public void setFile(File file) {
+		this.file = file;
+	}
+
+
+
+	public void setAutoSave(boolean autoSave) {
+		this.autoSave = autoSave;
+	}
+
+
+
+	public void setValueProcessor(IValueProcessor valueProcessor) {
+		this.valueProcessor = valueProcessor;
+	}
+
+
+
+	public void setSafeSave(boolean safeSave) {
+		this.safeSave = safeSave;
+	}
+
+
+
+	public void setTypeChecking(boolean typeChecking) {
+		this.typeChecking = typeChecking;
+	}
 }
